@@ -6,6 +6,7 @@ public class Task {
     private static final AtomicInteger idCounter = new AtomicInteger(1);
     private final int id;
     String title,description,dueDate,category,priorityLvl;
+    private boolean isComplete;
     
     Task(String title,String description, String dueDate, String category,String priorityLvl) {
         this.title = title;
@@ -14,6 +15,7 @@ public class Task {
         this.category = category;
         this.priorityLvl = priorityLvl;
         this.id = idCounter.getAndIncrement(); //increments the id number everytime a new task is created
+        this.isComplete = false;
     }
     
     public int getId() { //method that returns the id when called
@@ -38,6 +40,14 @@ public class Task {
     
     public String getPriorityLvl() {
         return priorityLvl;
+    }
+
+    public boolean isComplete() {
+        return isComplete;
+    }
+
+    public void markComplete() {
+        this.isComplete = true;
     }
     
     @Override

@@ -22,6 +22,7 @@ public class ToDoList_Assignment {
                 case 2 -> displayTasks(listOfTasks);
                 case 3 -> findTask(input, listOfTasks);                 
                 case 4 -> deleteTask(input, listOfTasks);
+                case 5 -> markTaskComplete(input, listOfTasks);
                 case 0 -> {
                     System.out.println("Goodbye!");
                     input.close();
@@ -41,6 +42,7 @@ public class ToDoList_Assignment {
             (2) Output all tasks
             (3) Find a task by ID
             (4) Delete task
+            (5) Mark Task as Complete
             (0) Exit
             ==========================""");
             return input.nextInt();
@@ -92,7 +94,7 @@ public class ToDoList_Assignment {
         
         Task task = new Task(title,description,dueDate,category,priorityLvl); //creates a new Task object
         listOfTasks.add(task); //adds the new object into the ArrayList
-        System.out.println("Task added successfully!");
+        System.out.println("Task \"" + title + "\" added successfully!");
         
         return task;
     }
@@ -180,6 +182,23 @@ public class ToDoList_Assignment {
         }
     }
     
-    //TASK SORTER
-    
+    //MARK TASK AS COMPLETE
+    public static void markTaskComplete(Scanner input , ArrayList<Task> listOfTasks) {
+        System.out.println("Which task would you like to mark as complete? (Enter ID)");
+        int id = input.nextInt();
+        if(id > 0 && id <= listOfTasks.size())
+        {
+            for(Task task : listOfTasks) {
+                if(task.getId() == id)
+                {
+                    task.markComplete();
+                    System.out.println("Task \"" + task.getTitle() + "\" marked as completed");
+                    System.out.println();
+                    break;
+                }
+            }
+        }
+        else
+            System.out.println("Task with ID " + id + " not found.");
+    }
 }

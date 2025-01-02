@@ -184,21 +184,26 @@ public class ToDoList_Assignment {
     
     //MARK TASK AS COMPLETE
     public static void markTaskComplete(Scanner input , ArrayList<Task> listOfTasks) {
+        Iterator<Task> iterator = listOfTasks.iterator();
         System.out.println("Which task would you like to mark as complete? (Enter ID)");
         int id = input.nextInt();
-        if(id > 0 && id <= listOfTasks.size())
+        boolean found = false;
+        while (iterator.hasNext()) 
         {
-            for(Task task : listOfTasks) {
-                if(task.getId() == id)
-                {
-                    task.markComplete();
-                    System.out.println("Task \"" + task.getTitle() + "\" marked as completed");
-                    System.out.println();
-                    break;
-                }
+            Task task = iterator.next();
+            if(task.getId() == id)
+            {
+                task.markComplete();
+                System.out.println("Task \"" + task.getTitle() + "\" marked as completed");                    
+                System.out.println("Task \"" + task.getTitle() + "\" will now be removed from the list.");
+                iterator.remove();
+                found = true;
+                break;
             }
+            
         }
-        else
+        if(!found) {
             System.out.println("Task with ID " + id + " not found.");
+        }
     }
 }

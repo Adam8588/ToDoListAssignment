@@ -52,7 +52,8 @@ public class Task {
     
     @Override
     public String toString() {
-        return "ID: " + id + "\n" +
+        return (isComplete ? "[Completed]" : "[Incomplete]") + "\n" +
+                "ID: " + id + "\n" +
                "Task Title: " + title + "\n" +
                "Description: " + description + "\n" +
                "Due Date: " + dueDate + "\n" +

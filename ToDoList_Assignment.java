@@ -33,6 +33,9 @@ public class ToDoList_Assignment {
                 case 5 -> deleteTask(input, listOfTasks);
                 case 6 -> markTaskComplete(input, listOfTasks);
                 case 7 -> checkAndSendNotifications(userEmail, listOfTasks);
+                case 8 -> editTask(input, listOfTasks); 
+                case 9 -> sortTask(input, listOfTasks);
+                case 10 -> recurringTask(input, listOfTasks);
                 case 0 -> {
                     System.out.println("Goodbye!");
                     input.close();
@@ -275,9 +278,9 @@ public class ToDoList_Assignment {
         Task task = findTaskById(listOfTasks, id);
         if (task != null) {
             System.out.println("What would you like to edit?\n1. Title\n2. Description\n3. Due Date\n4. Category\n5. Priority\n6. Set Task Dependency\n7. Cancel");
-            int editChoice = input.nextInt();
+            int edit = input.nextInt();
             input.nextLine();
-            switch (editChoice) {
+            switch (edit) {
                 case 1 -> {
                     System.out.print("Enter new title: ");
                     task.setTitle(input.nextLine());
@@ -299,8 +302,8 @@ public class ToDoList_Assignment {
                     task.setPriority(input.nextLine());
                 }
                 case 6 -> setTaskDependency(input, listOfTasks);
-                case 7 -> System.out.println("Edit cancelled.");
-                default -> System.out.println("Invalid choice.");
+                case 7 -> System.out.println("Edit cancelled");
+                default -> System.out.println("Invalid choice");
             }
             System.out.println("Task is updated");
         } else {
@@ -309,7 +312,7 @@ public class ToDoList_Assignment {
     }
 
     // TASK SORTING
-    private static void sortTasks(Scanner input, ArrayList<Task> listOfTasks) {
+    private static void sortTask(Scanner input, ArrayList<Task> listOfTasks) {
         System.out.println("Sort by:\n1. Due Date (Ascending)\n2. Due Date (Descending)\n3. Priority (High to Low)\n4. Priority (Low to High)");
         int sortChoice = input.nextInt();
         switch (sortChoice) {
@@ -322,8 +325,8 @@ public class ToDoList_Assignment {
         System.out.println("Tasks sorted successfully!");
     }
 
-//RECURRING TASKS
-private static void addRecurringTask(Scanner input, ArrayList<Task> listOfTasks) {
+    //RECURRING TASKS
+    private static void recurringTask(Scanner input, ArrayList<Task> listOfTasks) {
         Task task = taskAdder(input, listOfTasks);
         System.out.print("Enter recurrence interval (daily, weekly, monthly): ");
         String interval = input.nextLine();

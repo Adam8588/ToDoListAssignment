@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
+import java.util.Date;
+import java.util.InputMismatchException;
+import javax.mail.*;
+import javax.mail.internet.*;
+import java.util.Properties;
 
 public class ToDoList_Assignment {
 
@@ -13,6 +18,9 @@ public class ToDoList_Assignment {
         ArrayList<Task> listOfTasks = new ArrayList<>(); //Creates a new ArrayList to store the tasks
         
         System.out.println("Welcome to your To-Do List!");
+        System.out.println("Before starting, please enter your email address for task notifications:");
+        String userEmail = input.nextLine();
+        System.out.println();
         
         while (true) {
             int choice = getChoice(input);
@@ -20,9 +28,11 @@ public class ToDoList_Assignment {
             switch (choice) {
                 case 1 -> taskAdder(input, listOfTasks);           
                 case 2 -> displayTasks(listOfTasks);
-                case 3 -> findTask(input, listOfTasks);                 
-                case 4 -> deleteTask(input, listOfTasks);
-                case 5 -> markTaskComplete(input, listOfTasks);
+                case 3 -> findTask(input, listOfTasks);
+                case 4 -> fullTextSearch(input, listOfTasks);
+                case 5 -> deleteTask(input, listOfTasks);
+                case 6 -> markTaskComplete(input, listOfTasks);
+                case 7 -> checkAndSendNotifications(userEmail, listOfTasks);
                 case 0 -> {
                     System.out.println("Goodbye!");
                     input.close();
@@ -41,8 +51,10 @@ public class ToDoList_Assignment {
             (1) Add a task
             (2) Output all tasks
             (3) Find a task by ID
-            (4) Delete task
-            (5) Mark Task as Complete
+            (4) Search tasks by keyword
+            (5) Delete task
+            (6) Mark Task as Complete
+            (7) Send Notifications for Tasks Due in 24 Hours
             (0) Exit
             ==========================""");
             return input.nextInt();
@@ -138,8 +150,20 @@ public class ToDoList_Assignment {
     
     //TASK FINDER
     private static void findTask(Scanner scanner, ArrayList<Task> listOfTasks) {
+        int id;
         System.out.println("What is the ID of the task?");
-        int id = scanner.nextInt();
+        while (true) 
+        {
+            try {
+                
+                id = scanner.nextInt(); 
+                scanner.nextLine(); 
+                break; 
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input! Please enter a valid integer ID.");
+                scanner.nextLine(); 
+            }
+        }
         Task task = findTaskById(listOfTasks, id);
         if (task == null) {
             System.out.println("There is no task with this ID!");
@@ -156,6 +180,31 @@ public class ToDoList_Assignment {
             }
         }
         return null;
+    }
+
+    //TASK FINDER BY TITLE OR DESCRIPTION
+    private static void fullTextSearch(Scanner input, ArrayList<Task> listOfTasks) {
+        System.out.print("Enter a keyword to search by title or description: ");
+        input.nextLine();
+        String keyword = input.nextLine().toLowerCase();
+        boolean found = false;
+        Iterator<Task> iterator = listOfTasks.iterator();
+    
+        System.out.println("Searching for tasks matching the keyword \"" + keyword + "\":");
+        System.out.println("\n=== Search Results ===");
+        while (iterator.hasNext()) 
+        {
+            Task task = iterator.next();
+            if (task.getTitle().toLowerCase().contains(keyword) || task.getDescription().toLowerCase().contains(keyword)) 
+            {
+                System.out.println(task);
+                found = true;
+            }   
+        }
+        if (!found) {
+            System.out.println("No tasks found matching the keyword \"" + keyword + "\".");
+            System.out.println();
+        }
     }
     
     //TASK DELETER
@@ -195,8 +244,6 @@ public class ToDoList_Assignment {
             {
                 task.markComplete();
                 System.out.println("Task \"" + task.getTitle() + "\" marked as completed");                    
-                System.out.println("Task \"" + task.getTitle() + "\" will now be removed from the list.");
-                iterator.remove();
                 found = true;
                 break;
             }
@@ -204,6 +251,73 @@ public class ToDoList_Assignment {
         }
         if(!found) {
             System.out.println("Task with ID " + id + " not found.");
+        }
+    }
+
+    //CHECK FOR TASK THAT DUE WITHIN 24 HOURS
+    private static boolean isTaskDueWithin24Hours(String dueDate) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+        dateFormat.setLenient(false);
+        try {
+            Date taskDate = dateFormat.parse(dueDate);
+            Date currentDate = new Date();
+            long difference = taskDate.getTime() - currentDate.getTime();
+            return difference > 0 && difference <= 24 * 60 * 60 * 1000; // Within 24 hours
+        } catch (ParseException e) {
+            return false;
+        }
+    }
+
+    //SEND EMAIL NOTIFICATION
+    private static void sendEmail(String userEmail, Task task) {
+        String host = "smtp.gmail.com"; 
+        String from = "yiwenlai0502@gmail.com"; 
+        String password = "yhvx clmn qhdz ansa"; 
+
+        Properties properties = System.getProperties();
+        properties.put("mail.smtp.host", host);
+        properties.put("mail.smtp.port", "587");
+        properties.put("mail.smtp.auth", "true");
+        properties.put("mail.smtp.starttls.enable", "true");
+
+        Session session = Session.getInstance(properties, new javax.mail.Authenticator() {
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(from, password);
+            }
+        });
+
+        try {
+            MimeMessage message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(from));
+            message.addRecipient(Message.RecipientType.TO, new InternetAddress(userEmail));
+            message.setSubject("Task Reminder: " + task.getTitle());
+            message.setText("Hello,\n\nThis is a friendly reminder that the task \"" + task.getTitle() 
+                            + "\" is due within the next 24 hours.\n\nTask Details:\n"
+                            + "Description: " + task.getDescription() + "\n"
+                            + "Due Date: " + task.getDueDate() + "\n\n"
+                            + "Please ensure to complete it on time.\n\nThank you!");
+
+            Transport.send(message);
+            System.out.println("Reminder email sent successfully to: " + userEmail + " for task \"" + task.getTitle() + "\" due in 24 hours.");
+        } catch (MessagingException e) {
+            System.out.println("Failed to send email: " + e.getMessage());
+        }
+    }
+
+    //CHECK AND SEND NOTIFICATIONS
+    private static void checkAndSendNotifications(String userEmail, ArrayList<Task> listOfTasks) {
+        boolean emailSent = false;
+        for (Task task : listOfTasks) 
+        {
+            if (isTaskDueWithin24Hours(task.getDueDate())) 
+            {
+                sendEmail(userEmail, task);
+                emailSent = true;
+            }
+        }
+        if (!emailSent) 
+        {
+            System.out.println("No tasks are due within the next 24 hours.");
         }
     }
 }

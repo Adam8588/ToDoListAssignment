@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
+import java.util.Date;
+import java.util.InputMismatchException;
 import javax.mail.*;
 import javax.mail.internet.*;
 import java.util.Properties;
@@ -18,6 +20,7 @@ public class ToDoList_Assignment {
         System.out.println("Welcome to your To-Do List!");
         System.out.println("Before starting, please enter your email address for task notifications:");
         String userEmail = input.nextLine();
+        System.out.println();
         
         while (true) {
             int choice = getChoice(input);
@@ -147,8 +150,20 @@ public class ToDoList_Assignment {
     
     //TASK FINDER
     private static void findTask(Scanner scanner, ArrayList<Task> listOfTasks) {
+        int id;
         System.out.println("What is the ID of the task?");
-        int id = scanner.nextInt();
+        while (true) 
+        {
+            try {
+                
+                id = scanner.nextInt(); 
+                scanner.nextLine(); 
+                break; 
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input! Please enter a valid integer ID.");
+                scanner.nextLine(); 
+            }
+        }
         Task task = findTaskById(listOfTasks, id);
         if (task == null) {
             System.out.println("There is no task with this ID!");
@@ -176,7 +191,7 @@ public class ToDoList_Assignment {
         Iterator<Task> iterator = listOfTasks.iterator();
     
         System.out.println("Searching for tasks matching the keyword \"" + keyword + "\":");
-        System.out.println("=== Search Results ===");
+        System.out.println("\n=== Search Results ===");
         while (iterator.hasNext()) 
         {
             Task task = iterator.next();
@@ -188,6 +203,7 @@ public class ToDoList_Assignment {
         }
         if (!found) {
             System.out.println("No tasks found matching the keyword \"" + keyword + "\".");
+            System.out.println();
         }
     }
     
@@ -254,9 +270,9 @@ public class ToDoList_Assignment {
 
     //SEND EMAIL NOTIFICATION
     private static void sendEmail(String userEmail, Task task) {
-        String host = "smtp.gmail.com"; // Replace with your SMTP server
-        String from = "yiwenlai0502@gmail.com"; // Your email address
-        String password = "yhvx clmn qhdz ansa"; // Your email password
+        String host = "smtp.gmail.com"; 
+        String from = "yiwenlai0502@gmail.com"; 
+        String password = "yhvx clmn qhdz ansa"; 
 
         Properties properties = System.getProperties();
         properties.put("mail.smtp.host", host);
@@ -282,7 +298,7 @@ public class ToDoList_Assignment {
                             + "Please ensure to complete it on time.\n\nThank you!");
 
             Transport.send(message);
-            System.out.println("Reminder email sent successfully to: " + userEmail + "for task \"" + task.getTitle() + "\" due in 24 hours.");
+            System.out.println("Reminder email sent successfully to: " + userEmail + " for task \"" + task.getTitle() + "\" due in 24 hours.");
         } catch (MessagingException e) {
             System.out.println("Failed to send email: " + e.getMessage());
         }

@@ -268,6 +268,69 @@ public class ToDoList_Assignment {
         }
     }
 
+    // EDITING TASKS
+    private static void editTask(Scanner input, ArrayList<Task> listOfTasks) {
+        System.out.print("Enter task ID to edit: ");
+        int id = input.nextInt();
+        Task task = findTaskById(listOfTasks, id);
+        if (task != null) {
+            System.out.println("What would you like to edit?\n1. Title\n2. Description\n3. Due Date\n4. Category\n5. Priority\n6. Set Task Dependency\n7. Cancel");
+            int editChoice = input.nextInt();
+            input.nextLine();
+            switch (editChoice) {
+                case 1 -> {
+                    System.out.print("Enter new title: ");
+                    task.setTitle(input.nextLine());
+                }
+                case 2 -> {
+                    System.out.print("Enter new description: ");
+                    task.setDescription(input.nextLine());
+                }
+                case 3 -> {
+                    System.out.print("Enter new due date (DD-MM-YYYY): ");
+                    task.setDueDate(input.nextLine());
+                }
+                case 4 -> {
+                    System.out.print("Enter new category: ");
+                    task.setCategory(input.nextLine());
+                }
+                case 5 -> {
+                    System.out.print("Enter new priority: ");
+                    task.setPriority(input.nextLine());
+                }
+                case 6 -> setTaskDependency(input, listOfTasks);
+                case 7 -> System.out.println("Edit cancelled.");
+                default -> System.out.println("Invalid choice.");
+            }
+            System.out.println("Task is updated");
+        } else {
+            System.out.println("Task is not found");
+        }
+    }
+
+    // TASK SORTING
+    private static void sortTasks(Scanner input, ArrayList<Task> listOfTasks) {
+        System.out.println("Sort by:\n1. Due Date (Ascending)\n2. Due Date (Descending)\n3. Priority (High to Low)\n4. Priority (Low to High)");
+        int sortChoice = input.nextInt();
+        switch (sortChoice) {
+            case 1 -> listOfTasks.sort(Comparator.comparing(Task::getDueDate));
+            case 2 -> listOfTasks.sort(Comparator.comparing(Task::getDueDate).reversed());
+            case 3 -> listOfTasks.sort(Comparator.comparing(Task::getPriority).reversed());
+            case 4 -> listOfTasks.sort(Comparator.comparing(Task::getPriority));
+            default -> System.out.println("Invalid choice.");
+        }
+        System.out.println("Tasks sorted successfully!");
+    }
+
+//RECURRING TASKS
+private static void addRecurringTask(Scanner input, ArrayList<Task> listOfTasks) {
+        Task task = taskAdder(input, listOfTasks);
+        System.out.print("Enter recurrence interval (daily, weekly, monthly): ");
+        String interval = input.nextLine();
+        task.setRecurrenceInterval(interval);
+        System.out.println("Recurring task \"" + task.getTitle() + "\" created successfully!");
+    }
+
     //SEND EMAIL NOTIFICATION
     private static void sendEmail(String userEmail, Task task) {
         String host = "smtp.gmail.com"; 

@@ -110,10 +110,11 @@ public class ToDoList_Assignment {
             }
         }
         
-        Task task = new Task(title,description,dueDate,category,priorityLvl); //creates a new Task object
-        listOfTasks.add(task); //adds the new object into the ArrayList
-        System.out.println("Task \"" + title + "\" added successfully!");
-        
+       Task task = new Task(title, description, dueDate, category, priorityLvl);
+task.setLoadState(Task.LoadState.LOADED);
+listOfTasks.add(task);
+System.out.println("Task \"" + title + "\" added successfully!");
+
         return task;
     }
     
@@ -245,16 +246,18 @@ public class ToDoList_Assignment {
         boolean found = false;
         while (iterator.hasNext()) 
         {
-            Task task = iterator.next();
-            if(task.getId() == id)
-            {
-                task.markComplete();
-                System.out.println("Task \"" + task.getTitle() + "\" marked as completed");                    
-                found = true;
-                break;
-            }
-            
+            if (task.getId() == id) {
+    if (!areDependenciesComplete(task, listOfTasks)) {
+        System.out.println("Cannot complete task. Dependencies are not met.");
+        return;
+    }
+    task.markComplete();
+    System.out.println("Task \"" + task.getTitle() + "\" marked as completed");
+    found = true;
+    break;
+}
         }
+
         if(!found) {
             System.out.println("Task with ID " + id + " not found.");
         }
@@ -313,6 +316,43 @@ public class ToDoList_Assignment {
             System.out.println("Task is not found");
         }
     }
+
+    private static void setTaskDependency(Scanner input, ArrayList<Task> listOfTasks) {
+    System.out.print("Enter the ID of the task to set dependency for: ");
+    int taskId = input.nextInt();
+    Task task = findTaskById(listOfTasks, taskId);
+
+    if (task == null) {
+        System.out.println("Task not found!");
+        return;
+    }
+
+    System.out.print("Enter the ID of the task it depends on: ");
+    int dependencyId = input.nextInt();
+    Task dependencyTask = findTaskById(listOfTasks, dependencyId);
+
+    if (dependencyTask == null) {
+        System.out.println("Dependency task not found!");
+        return;
+    }
+
+    task.setDependencyId(dependencyId);
+    System.out.println("Dependency set successfully: Task " + taskId + " depends on Task " + dependencyId);
+}
+
+
+private static boolean areDependenciesComplete(Task task, ArrayList<Task> listOfTasks) {
+    if (task.getDependencyId() == -1) {
+        return true; // No dependencies
+    }
+
+    Task dependencyTask = findTaskById(listOfTasks, task.getDependencyId());
+    return dependencyTask != null && dependencyTask.isComplete();
+}
+
+
+
+
 
     // TASK SORTING
     private static void sortTask(Scanner input, ArrayList<Task> listOfTasks) {

@@ -100,4 +100,34 @@ public class Task {
                "Status: + (isComplete ? "Completed" : "Incomplete") + "\n" +
                 (recurrenceInterval != null ? "Recurrence: " + recurrenceInterval : "");
     }
+
+    //Manage task dependencies
+private int dependencyId = -1; // Default: no dependency
+
+public int getDependencyId() {
+    return dependencyId;
+}
+
+public void setDependencyId(int dependencyId) {
+    this.dependencyId = dependencyId;
+}
+
+public enum LoadState {
+    LOADING,
+    LOADED,
+    FAILED
+}
+
+private LoadState loadState = LoadState.LOADING;
+
+public LoadState getLoadState() {
+    return loadState;
+}
+
+public void setLoadState(LoadState loadState) {
+    this.loadState = loadState;
+}
+
+
+
 }

@@ -58,6 +58,9 @@ public class ToDoList_Assignment {
             (5) Delete task
             (6) Mark Task as Complete
             (7) Send Notifications for Tasks Due in 24 Hours
+            (8) Edit a task
+            (9) Sort tasks
+            (10) Add a recurring task
             (0) Exit
             ==========================""");
             return input.nextInt();

@@ -8,7 +8,7 @@ public class Task {
     String title,description,dueDate,category,priorityLvl, recurrenceInterval;
     private boolean isComplete;
     
-    Task(String title,String description, String dueDate, String category,String priorityLvl,boolean isComplete, String interval) {
+    Task(String title,String description, String dueDate, String category,String priorityLvl, boolean isComplete, String interval) {
         this.title = title;
         this.description = description;
         this.dueDate = dueDate;
@@ -75,7 +75,7 @@ public class Task {
     }
 
     public void setPriority(String priority) {
-        this.priority = priority;
+        this.priorityLvl = priority;
     }
 
     public void setDependencyId(int dependencyId) {
@@ -96,38 +96,31 @@ public class Task {
                "Description: " + description + "\n" +
                "Due Date: " + dueDate + "\n" +
                "Category: " + category + "\n" +
-               "Priority Level: " + priorityLvl + "\n";
-               "Status: + (isComplete ? "Completed" : "Incomplete") + "\n" +
-                (recurrenceInterval != null ? "Recurrence: " + recurrenceInterval : "");
+               "Priority Level: " + priorityLvl + "\n" +
+               "Status: " + (isComplete ? "Completed" : "Incomplete") + "\n" +
+               (recurrenceInterval != null ? "Recurrence: " + recurrenceInterval : "");
     }
 
     //Manage task dependencies
-private int dependencyId = -1; // Default: no dependency
+       private int dependencyId = -1; // Default: no dependency
 
-public int getDependencyId() {
-    return dependencyId;
-}
+    public int getDependencyId() {
+        return dependencyId;
+    }
 
-public void setDependencyId(int dependencyId) {
-    this.dependencyId = dependencyId;
-}
+    public enum LoadState {
+        LOADING,
+        LOADED,
+        FAILED
+    }
 
-public enum LoadState {
-    LOADING,
-    LOADED,
-    FAILED
-}
+    private LoadState loadState = LoadState.LOADING;
 
-private LoadState loadState = LoadState.LOADING;
+    public LoadState getLoadState() {
+        return loadState;
+    }
 
-public LoadState getLoadState() {
-    return loadState;
-}
-
-public void setLoadState(LoadState loadState) {
-    this.loadState = loadState;
-}
-
-
-
+    public void setLoadState(LoadState loadState) {
+        this.loadState = loadState;
+    }
 }

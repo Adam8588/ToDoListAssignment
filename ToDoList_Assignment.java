@@ -6,9 +6,10 @@ import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.InputMismatchException;
-import javax.mail.*;
-import javax.mail.internet.*;
+import jakarta.mail.*;
+import jakarta.mail.internet.*;
 import java.util.Properties;
+import java.util.*;
 
 public class ToDoList_Assignment {
 
@@ -69,7 +70,7 @@ public class ToDoList_Assignment {
     //TASK ADDER
     private static Task taskAdder(Scanner input, ArrayList<Task> listOfTasks) { //uses the ArrayList as a parameter, enabling taskAdder to access the list
         input.nextLine(); //clear the newline
-        String title,description,dueDate,category,priorityLvl;
+        String title,description,dueDate,category,priorityLvl,interval;
         
         //input title
         System.out.print("Enter task title: ");
@@ -110,10 +111,17 @@ public class ToDoList_Assignment {
             }
         }
         
-       Task task = new Task(title, description, dueDate, category, priorityLvl);
-task.setLoadState(Task.LoadState.LOADED);
-listOfTasks.add(task);
-System.out.println("Task \"" + title + "\" added successfully!");
+        // Input recurrence interval
+        System.out.print("Enter recurrence interval (e.g., Daily, Weekly, Monthly, or leave blank if none): ");
+        interval = input.nextLine();
+        if (interval.isEmpty()) {
+            interval = null; // Set null if no interval is provided
+        }
+        
+        Task task = new Task(title, description, dueDate, category, priorityLvl, false, interval);
+        task.setLoadState(Task.LoadState.LOADED);
+        listOfTasks.add(task);
+        System.out.println("Task \"" + title + "\" added successfully!");
 
         return task;
     }
@@ -246,18 +254,18 @@ System.out.println("Task \"" + title + "\" added successfully!");
         boolean found = false;
         while (iterator.hasNext()) 
         {
+            Task task = iterator.next();
             if (task.getId() == id) {
-    if (!areDependenciesComplete(task, listOfTasks)) {
-        System.out.println("Cannot complete task. Dependencies are not met.");
-        return;
-    }
-    task.markComplete();
-    System.out.println("Task \"" + task.getTitle() + "\" marked as completed");
-    found = true;
-    break;
-}
+                if (!areDependenciesComplete(task, listOfTasks)) {
+                    System.out.println("Cannot complete task. Dependencies are not met.");
+                    return;
+                }
+                task.markComplete();
+                System.out.println("Task \"" + task.getTitle() + "\" marked as completed");
+                found = true;
+                break;
+            }
         }
-
         if(!found) {
             System.out.println("Task with ID " + id + " not found.");
         }
@@ -270,7 +278,7 @@ System.out.println("Task \"" + title + "\" added successfully!");
         try {
             Date taskDate = dateFormat.parse(dueDate);
             Date currentDate = new Date();
-            long difference = taskDate.getDueDate() - currentDate.getDueDate();
+            long difference = taskDate.getTime() - currentDate.getTime();
             return difference > 0 && difference <= 24 * 60 * 60 * 1000; // Within 24 hours
         } catch (ParseException e) {
             return false;
@@ -307,7 +315,7 @@ System.out.println("Task \"" + title + "\" added successfully!");
                     System.out.print("Enter new priority: ");
                     task.setPriority(input.nextLine());
                 }
-                case 6 -> settaskDependency(input, listOfTasks);
+                case 6 -> setTaskDependency(input, listOfTasks);
                 case 7 -> System.out.println("Edit cancelled");
                 default -> System.out.println("Invalid choice");
             }
@@ -340,19 +348,14 @@ System.out.println("Task \"" + title + "\" added successfully!");
     System.out.println("Dependency set successfully: Task " + taskId + " depends on Task " + dependencyId);
 }
 
+    private static boolean areDependenciesComplete(Task task, ArrayList<Task> listOfTasks) {
+        if (task.getDependencyId() == -1) {
+            return true; // No dependencies
+        }
 
-private static boolean areDependenciesComplete(Task task, ArrayList<Task> listOfTasks) {
-    if (task.getDependencyId() == -1) {
-        return true; // No dependencies
+        Task dependencyTask = findTaskById(listOfTasks, task.getDependencyId());
+        return dependencyTask != null && dependencyTask.isComplete();
     }
-
-    Task dependencyTask = findTaskById(listOfTasks, task.getDependencyId());
-    return dependencyTask != null && dependencyTask.isComplete();
-}
-
-
-
-
 
     // TASK SORTING
     private static void sortTask(Scanner input, ArrayList<Task> listOfTasks) {
@@ -361,8 +364,8 @@ private static boolean areDependenciesComplete(Task task, ArrayList<Task> listOf
         switch (sortChoice) {
             case 1 -> listOfTasks.sort(Comparator.comparing(Task::getDueDate));
             case 2 -> listOfTasks.sort(Comparator.comparing(Task::getDueDate).reversed());
-            case 3 -> listOfTasks.sort(Comparator.comparing(Task::getPriorityLv1).reversed());
-            case 4 -> listOfTasks.sort(Comparator.comparing(Task::getPriorityLv1));
+            case 3 -> listOfTasks.sort(Comparator.comparing(Task::getPriorityLvl).reversed());
+            case 4 -> listOfTasks.sort(Comparator.comparing(Task::getPriorityLvl));
             default -> System.out.println("Invalid choice.");
         }
         System.out.println("Tasks sorted successfully!");
@@ -389,7 +392,7 @@ private static boolean areDependenciesComplete(Task task, ArrayList<Task> listOf
         properties.put("mail.smtp.auth", "true");
         properties.put("mail.smtp.starttls.enable", "true");
 
-        Session session = Session.getInstance(properties, new javax.mail.Authenticator() {
+        Session session = Session.getInstance(properties, new jakarta.mail.Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
                 return new PasswordAuthentication(from, password);
             }

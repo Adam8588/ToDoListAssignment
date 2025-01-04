@@ -267,7 +267,7 @@ public class ToDoList_Assignment {
         try {
             Date taskDate = dateFormat.parse(dueDate);
             Date currentDate = new Date();
-            long difference = taskDate.getTime() - currentDate.getTime();
+            long difference = taskDate.getDueDate() - currentDate.getDueDate();
             return difference > 0 && difference <= 24 * 60 * 60 * 1000; // Within 24 hours
         } catch (ParseException e) {
             return false;
@@ -304,7 +304,7 @@ public class ToDoList_Assignment {
                     System.out.print("Enter new priority: ");
                     task.setPriority(input.nextLine());
                 }
-                case 6 -> setTaskDependency(input, listOfTasks);
+                case 6 -> settaskDependency(input, listOfTasks);
                 case 7 -> System.out.println("Edit cancelled");
                 default -> System.out.println("Invalid choice");
             }
@@ -321,8 +321,8 @@ public class ToDoList_Assignment {
         switch (sortChoice) {
             case 1 -> listOfTasks.sort(Comparator.comparing(Task::getDueDate));
             case 2 -> listOfTasks.sort(Comparator.comparing(Task::getDueDate).reversed());
-            case 3 -> listOfTasks.sort(Comparator.comparing(Task::getPriority).reversed());
-            case 4 -> listOfTasks.sort(Comparator.comparing(Task::getPriority));
+            case 3 -> listOfTasks.sort(Comparator.comparing(Task::getPriorityLv1).reversed());
+            case 4 -> listOfTasks.sort(Comparator.comparing(Task::getPriorityLv1));
             default -> System.out.println("Invalid choice.");
         }
         System.out.println("Tasks sorted successfully!");

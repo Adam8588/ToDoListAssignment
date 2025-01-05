@@ -1,9 +1,16 @@
 package com.mycompany.todolist_assignment;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
-import java.util.*;
 import java.io.*;
 import java.text.*;
+import java.util.*;
+import java.util.Comparator;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.*;
+import org.apache.lucene.index.*;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.*;
+import org.apache.lucene.store.*;
 
 public class ToDoList_Assignment {
     
@@ -34,7 +41,9 @@ public class ToDoList_Assignment {
                 case 8 -> editTask(input, listOfTasks); 
                 case 9 -> sortTask(input, listOfTasks);
                 case 10 -> recurringTask(input, listOfTasks);
+                case 11 -> searchTaskByKeyword(input, listOfTasks);
                 case 0 -> {
+                    StorageSystem.saveTasks(listOfTasks, FILE_NAME); // Save tasks before exiting
                     System.out.println("Goodbye!");
                     input.close();
                     return;
@@ -59,6 +68,7 @@ public class ToDoList_Assignment {
             (8) Edit a task
             (9) Sort tasks
             (10) Add a recurring task
+            (11) Vector Search by Keyword
             (0) Exit
             ==========================""");
             return input.nextInt();
@@ -118,6 +128,7 @@ public class ToDoList_Assignment {
         Task task = new Task(title, description, dueDate, category, priorityLvl, false, interval);
         task.setLoadState(Task.LoadState.LOADED);
         listOfTasks.add(task);
+        TaskIndex.createIndex(listOfTasks);
         System.out.println("Task \"" + title + "\" added successfully!");
 
         return task;
@@ -433,28 +444,57 @@ public class ToDoList_Assignment {
     //Storage System
     static class StorageSystem {
          public static void saveTasks(ArrayList<Task> listOfTasks, String fileName) {
-            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(fileName))) {
-                oos.writeObject(listOfTasks);
-                System.out.println("Tasks saved successfully.");
-            } catch (IOException e) {
-                System.out.println("Error saving tasks: " + e.getMessage());
-            }
+        if (listOfTasks == null || listOfTasks.isEmpty()) {
+            System.out.println("No tasks to save.");
+            return;
         }
 
-        @SuppressWarnings("unchecked")
-        public static void loadTasks(ArrayList<Task> listOfTasks, String fileName) {
-            File file = new File(fileName);
-            if (!file.exists()) {
-                System.out.println("No saved tasks found.");
-                return;
-            }
-
-            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-                listOfTasks.addAll((ArrayList<Task>) ois.readObject());
-                System.out.println("Tasks loaded successfully.");
-            } catch (IOException | ClassNotFoundException e) {
-                System.out.println("Error loading tasks: " + e.getMessage());
-            }
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(fileName))) {
+            oos.writeObject(listOfTasks);
+            System.out.println("Tasks saved successfully to '" + fileName + "'.");
+        } catch (IOException e) {
+            System.out.println("Error saving tasks: " + e.getMessage());
         }
     }
+
+    @SuppressWarnings("unchecked")
+    public static void loadTasks(ArrayList<Task> listOfTasks, String fileName) {
+        File file = new File(fileName);
+
+        if (!file.exists()) {
+            System.out.println("No saved tasks found. Starting with an empty list.");
+            return;
+        }
+
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+            // Safely clear the current list and load tasks from the file
+            ArrayList<Task> loadedTasks = (ArrayList<Task>) ois.readObject();
+            listOfTasks.clear();
+            listOfTasks.addAll(loadedTasks);
+            System.out.println("Tasks loaded successfully from '" + fileName + "'.");
+        } catch (IOException e) {
+            System.out.println("Error loading tasks: " + e.getMessage());
+        } catch (ClassNotFoundException e) {
+            System.out.println("Error: Task class definition not found. " + e.getMessage());
+        }
+    }
+}
+    
+    //vector search
+    private static void searchTaskByKeyword(Scanner input, ArrayList<Task> listOfTasks) {
+    System.out.print("Enter keyword for vector search: ");
+    String keyword = input.nextLine();
+    //Perform search using TaskIndex
+    ArrayList<Task> results = TaskIndex.searchTasks(keyword, listOfTasks);
+    //Display results
+    if (results.isEmpty()) {
+        System.out.println("No tasks found for keyword \"" + keyword + "\".");
+    } else {
+        System.out.println("Tasks found for keyword \"" + keyword + "\":");
+        for (Task task : results) {
+            System.out.println(task);
+        }
+    }
+}
+
 }

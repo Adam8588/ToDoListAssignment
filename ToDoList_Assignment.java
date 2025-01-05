@@ -52,7 +52,7 @@ public class ToDoList_Assignment {
             }
         }
     }
-    
+
     //USER CHOICE
     private static int getChoice(Scanner input) {
         System.out.println("""
@@ -441,6 +441,121 @@ public class ToDoList_Assignment {
             System.out.println("No tasks are due within the next 24 hours.");
         }
     }
+
+    //Task class
+    public static class Task implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private int id;
+        private String title;
+        private String description;
+        private String dueDate;
+        private String category;
+        private String priorityLvl;
+        private boolean isComplete;
+        private String recurrenceInterval;
+        private int dependencyId = -1;
+
+        public Task(String title, String description, String dueDate, String category, String priorityLvl, boolean isComplete, String recurrenceInterval) {
+            this.title = title;
+            this.description = description;
+            this.dueDate = dueDate;
+            this.category = category;
+            this.priorityLvl = priorityLvl;
+            this.isComplete = isComplete;
+            this.recurrenceInterval = recurrenceInterval;
+        }
+
+        public int getId() { return id; }
+        public void setId(int id) { this.id = id; }
+        public String getTitle() { return title; }
+        public void setTitle(String title) { this.title = title; }
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
+        public String getDueDate() { return dueDate; }
+        public void setDueDate(String dueDate) { this.dueDate = dueDate; }
+        public String getCategory() { return category; }
+        public void setCategory(String category) { this.category = category; }
+        public String getPriorityLvl() { return priorityLvl; }
+        public void setPriority(String priorityLvl) { this.priorityLvl = priorityLvl; }
+        public boolean isComplete() { return isComplete; }
+        public void markComplete() { this.isComplete = true; }
+        public String getRecurrenceInterval() { return recurrenceInterval; }
+        public void setRecurrenceInterval(String recurrenceInterval) { this.recurrenceInterval = recurrenceInterval; }
+        public int getDependencyId() { return dependencyId; }
+        public void setDependencyId(int dependencyId) { this.dependencyId = dependencyId; }
+
+        @Override
+        public String toString() {
+            return "Task ID: " + id +
+                    "\nTitle: " + title +
+                    "\nDescription: " + description +
+                    "\nDue Date: " + dueDate +
+                    "\nCategory: " + category +
+                    "\nPriority: " + priorityLvl +
+                    "\nStatus: " + (isComplete ? "Completed" : "Incomplete") +
+                    "\nRecurrence: " + (recurrenceInterval == null ? "None" : recurrenceInterval) +
+                    "\nDependency: " + (dependencyId == -1 ? "None" : "Task ID " + dependencyId) +
+                    "\n--------------------------";
+        }
+    }
+
+    //TaskIndex class
+    public static class TaskIndex {
+        private static Directory memoryIndex = new RAMDirectory();
+        private static StandardAnalyzer analyzer = new StandardAnalyzer();
+
+        public static void createIndex(ArrayList<Task> listOfTasks) {
+            try (IndexWriter writer = new IndexWriter(memoryIndex, new IndexWriterConfig(analyzer))) {
+                writer.deleteAll();
+                for (Task task : listOfTasks) {
+                    Document doc = new Document();
+                    doc.add(new IntPoint("id", task.getId()));
+                    doc.add(new StoredField("id", task.getId()));
+                    doc.add(new TextField("title", task.getTitle(), Field.Store.YES));
+                    doc.add(new TextField("description", task.getDescription(), Field.Store.YES));
+                    writer.addDocument(doc);
+                }
+                writer.commit();
+            } catch (IOException e) {
+                System.out.println("Error creating Lucene index: " + e.getMessage());
+            }
+        }
+
+        public static ArrayList<Task> searchTasks(String keyword, ArrayList<Task> listOfTasks) {
+            ArrayList<Task> results = new ArrayList<>();
+            try {
+                QueryParser parser = new QueryParser("description", analyzer);
+                Query query = parser.parse(keyword);
+
+                IndexReader reader = DirectoryReader.open(memoryIndex);
+                IndexSearcher searcher = new IndexSearcher(reader);
+
+                TopDocs topDocs = searcher.search(query, 10);
+                for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
+                    Document doc = searcher.doc(scoreDoc.doc);
+                    int id = doc.getField("id").numericValue().intValue();
+                    Task task = findTaskById(listOfTasks, id);
+                    if (task != null) {
+                        results.add(task);
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println("Error during Lucene search: " + e.getMessage());
+            }
+            return results;
+        }
+
+        private static Task findTaskById(ArrayList<Task> listOfTasks, int id) {
+            for (Task task : listOfTasks) {
+                if (task.getId() == id) {
+                    return task;
+                }
+            }
+            return null;
+        }
+    }
+
     //Storage System
     static class StorageSystem {
          public static void saveTasks(ArrayList<Task> listOfTasks, String fileName) {

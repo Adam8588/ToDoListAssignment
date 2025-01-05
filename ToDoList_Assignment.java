@@ -1,22 +1,27 @@
 package com.mycompany.todolist_assignment;
-import java.util.Scanner;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.text.SimpleDateFormat;
-import java.text.ParseException;
-import java.util.Date;
-import java.util.InputMismatchException;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
-import java.util.Properties;
 import java.util.*;
+import java.io.*;
+import java.text.*;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.*;
+import org.apache.lucene.index.*;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.*;
+import org.apache.lucene.store.*;
+import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.ScoreDoc;
 
 public class ToDoList_Assignment {
+    
+    private static final String FILE_NAME = "task.dat";
 
     public static void main(String[] args) {
         Scanner input = new Scanner (System.in);
         
         ArrayList<Task> listOfTasks = new ArrayList<>(); //Creates a new ArrayList to store the tasks
+        StorageSystem.loadTasks(listOfTasks, FILE_NAME); // Load saved tasks
         
         System.out.println("Welcome to your To-Do List!");
         System.out.println("Before starting, please enter your email address for task notifications:");
@@ -135,7 +140,7 @@ public class ToDoList_Assignment {
         if (dueDate.matches(datePattern)) {
             try {
                 dateFormat.parse(dueDate);
-            } catch (ParseException e) {
+            } catch (java.text.ParseException e) {
                 return false;
             }
         }
@@ -280,7 +285,7 @@ public class ToDoList_Assignment {
             Date currentDate = new Date();
             long difference = taskDate.getTime() - currentDate.getTime();
             return difference > 0 && difference <= 24 * 60 * 60 * 1000; // Within 24 hours
-        } catch (ParseException e) {
+        } catch (java.text.ParseException e) {
             return false;
         }
     }
@@ -393,6 +398,7 @@ public class ToDoList_Assignment {
         properties.put("mail.smtp.starttls.enable", "true");
 
         Session session = Session.getInstance(properties, new jakarta.mail.Authenticator() {
+            @Override
             protected PasswordAuthentication getPasswordAuthentication() {
                 return new PasswordAuthentication(from, password);
             }
@@ -430,6 +436,76 @@ public class ToDoList_Assignment {
         if (!emailSent) 
         {
             System.out.println("No tasks are due within the next 24 hours.");
+        }
+    }
+    
+    static class StorageSystem {
+         public static void saveTasks(ArrayList<Task> listOfTasks, String fileName) {
+            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(fileName))) {
+                oos.writeObject(listOfTasks);
+                System.out.println("Tasks saved successfully.");
+            } catch (IOException e) {
+                System.out.println("Error saving tasks: " + e.getMessage());
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        public static void loadTasks(ArrayList<Task> listOfTasks, String fileName) {
+            File file = new File(fileName);
+            if (!file.exists()) {
+                System.out.println("No saved tasks found.");
+                return;
+            }
+
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+                listOfTasks.addAll((ArrayList<Task>) ois.readObject());
+                System.out.println("Tasks loaded successfully.");
+            } catch (IOException | ClassNotFoundException e) {
+                System.out.println("Error loading tasks: " + e.getMessage());
+            }
+        }
+    }
+    
+    static class VectorSearch {
+        private final ByteBuffersDirectory index;
+        private final StandardAnalyzer analyzer;
+
+        public VectorSearch() {
+            this.index = new ByteBuffersDirectory();
+            this.analyzer = new StandardAnalyzer();
+        }
+
+        public void indexTasks(ArrayList<Task> listOfTasks) throws Exception {
+            try (IndexWriter writer = new IndexWriter(index, new IndexWriterConfig(analyzer))) {
+                for (Task task : listOfTasks) {
+                    Document doc = new Document();
+                    doc.add(new TextField("title", task.getTitle(), Field.Store.YES));
+                    doc.add(new TextField("description", task.getDescription(), Field.Store.YES));
+                    doc.add(new IntPoint("id", task.getId()));
+                    doc.add(new StoredField("id", task.getId()));
+                    doc.add(new StoredField("dueDate", task.getDueDate()));
+                    doc.add(new StoredField("isComplete", Boolean.toString(task.isComplete()))); // Store as "true" or "false"
+                    writer.addDocument(doc);
+                }
+                System.out.println("Tasks indexed successfully.");
+            }
+        }
+        public ArrayList<Task> searchTasks(String queryStr) throws Exception {
+            ArrayList<Task> results = new ArrayList<>();
+            Query query = new QueryParser("title", analyzer).parse(queryStr);
+
+            try (IndexReader reader = DirectoryReader.open(index)) {
+                IndexSearcher searcher = new IndexSearcher(reader);
+                TopDocs topDocs = searcher.search(query, 10);
+
+                for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
+                    Document doc;
+                    doc = searcher.doc(scoreDoc.doc);
+                    results.add(new Task(doc.get("title"), doc.get("description"), doc.get("dueDate"), "", "", Boolean.parseBoolean(doc.get("isComplete")), ""));
+                }
+            }
+
+            return results;
         }
     }
 }

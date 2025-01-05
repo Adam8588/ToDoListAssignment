@@ -1,8 +1,9 @@
 package com.mycompany.todolist_assignment;
-
+import java.io.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Task {
+public class Task implements Serializable{
+    private static final long serialVersionUID = 1L;
     private static final AtomicInteger idCounter = new AtomicInteger(1);
     private final int id;
     String title,description,dueDate,category,priorityLvl, recurrenceInterval;

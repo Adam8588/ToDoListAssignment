@@ -13,7 +13,6 @@ public class ToDoList_Assignment {
         Scanner input = new Scanner (System.in);
         
         ArrayList<Task> listOfTasks = new ArrayList<>(); //Creates a new ArrayList to store the tasks
-        StorageSystem.loadTasks(listOfTasks, FILE_NAME); // Load saved tasks
         
         System.out.println("Welcome to your To-Do List!");
         System.out.println("Before starting, please enter your email address for task notifications:");
@@ -34,6 +33,8 @@ public class ToDoList_Assignment {
                 case 8 -> editTask(input, listOfTasks); 
                 case 9 -> sortTask(input, listOfTasks);
                 case 10 -> recurringTask(input, listOfTasks);
+                case 11 -> saveTasks(listOfTasks, FILE_NAME);
+                case 12 -> loadTasks(listOfTasks, FILE_NAME);
                 case 0 -> {
                     System.out.println("Goodbye!");
                     input.close();
@@ -59,6 +60,8 @@ public class ToDoList_Assignment {
             (8) Edit a task
             (9) Sort tasks
             (10) Add a recurring task
+            (11) Create a save file
+            (12) Load the save file
             (0) Exit
             ==========================""");
             return input.nextInt();
@@ -430,9 +433,9 @@ public class ToDoList_Assignment {
             System.out.println("No tasks are due within the next 24 hours.");
         }
     }
-    //Storage System
-    static class StorageSystem {
-         public static void saveTasks(ArrayList<Task> listOfTasks, String fileName) {
+        //Storage System
+        public static void saveTasks(ArrayList<Task> listOfTasks, String fileName) {
+            System.out.println("Attempting to save tasks to file: " + fileName);
             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(fileName))) {
                 oos.writeObject(listOfTasks);
                 System.out.println("Tasks saved successfully.");
@@ -443,6 +446,7 @@ public class ToDoList_Assignment {
 
         @SuppressWarnings("unchecked")
         public static void loadTasks(ArrayList<Task> listOfTasks, String fileName) {
+            System.out.println("Attempting to load tasks from file: " + fileName);
             File file = new File(fileName);
             if (!file.exists()) {
                 System.out.println("No saved tasks found.");
@@ -454,7 +458,6 @@ public class ToDoList_Assignment {
                 System.out.println("Tasks loaded successfully.");
             } catch (IOException | ClassNotFoundException e) {
                 System.out.println("Error loading tasks: " + e.getMessage());
-            }
         }
-    }
+     }
 }

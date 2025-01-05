@@ -4,14 +4,6 @@ import jakarta.mail.internet.*;
 import java.util.*;
 import java.io.*;
 import java.text.*;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.*;
-import org.apache.lucene.index.*;
-import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.*;
-import org.apache.lucene.store.*;
-import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.ScoreDoc;
 
 public class ToDoList_Assignment {
     
@@ -438,7 +430,7 @@ public class ToDoList_Assignment {
             System.out.println("No tasks are due within the next 24 hours.");
         }
     }
-    
+    //Storage System
     static class StorageSystem {
          public static void saveTasks(ArrayList<Task> listOfTasks, String fileName) {
             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(fileName))) {
@@ -463,49 +455,6 @@ public class ToDoList_Assignment {
             } catch (IOException | ClassNotFoundException e) {
                 System.out.println("Error loading tasks: " + e.getMessage());
             }
-        }
-    }
-    
-    static class VectorSearch {
-        private final ByteBuffersDirectory index;
-        private final StandardAnalyzer analyzer;
-
-        public VectorSearch() {
-            this.index = new ByteBuffersDirectory();
-            this.analyzer = new StandardAnalyzer();
-        }
-
-        public void indexTasks(ArrayList<Task> listOfTasks) throws Exception {
-            try (IndexWriter writer = new IndexWriter(index, new IndexWriterConfig(analyzer))) {
-                for (Task task : listOfTasks) {
-                    Document doc = new Document();
-                    doc.add(new TextField("title", task.getTitle(), Field.Store.YES));
-                    doc.add(new TextField("description", task.getDescription(), Field.Store.YES));
-                    doc.add(new IntPoint("id", task.getId()));
-                    doc.add(new StoredField("id", task.getId()));
-                    doc.add(new StoredField("dueDate", task.getDueDate()));
-                    doc.add(new StoredField("isComplete", Boolean.toString(task.isComplete()))); // Store as "true" or "false"
-                    writer.addDocument(doc);
-                }
-                System.out.println("Tasks indexed successfully.");
-            }
-        }
-        public ArrayList<Task> searchTasks(String queryStr) throws Exception {
-            ArrayList<Task> results = new ArrayList<>();
-            Query query = new QueryParser("title", analyzer).parse(queryStr);
-
-            try (IndexReader reader = DirectoryReader.open(index)) {
-                IndexSearcher searcher = new IndexSearcher(reader);
-                TopDocs topDocs = searcher.search(query, 10);
-
-                for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
-                    Document doc;
-                    doc = searcher.doc(scoreDoc.doc);
-                    results.add(new Task(doc.get("title"), doc.get("description"), doc.get("dueDate"), "", "", Boolean.parseBoolean(doc.get("isComplete")), ""));
-                }
-            }
-
-            return results;
         }
     }
 }

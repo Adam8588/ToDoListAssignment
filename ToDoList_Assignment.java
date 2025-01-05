@@ -4,15 +4,28 @@ import jakarta.mail.internet.*;
 import java.util.*;
 import java.io.*;
 import java.text.*;
+import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
+import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.ops.transforms.Transforms;
 
 public class ToDoList_Assignment {
     
     private static final String FILE_NAME = "task.dat";
+    private static WordVectors wordVectors;
 
     public static void main(String[] args) {
         Scanner input = new Scanner (System.in);
         
         ArrayList<Task> listOfTasks = new ArrayList<>(); //Creates a new ArrayList to store the tasks
+
+         // Load pre-trained word vectors
+        try {
+            wordVectors = WordVectorSerializer.loadStaticModel(new File("path/to/word2vec/model"));
+        } catch (IOException e) {
+            System.out.println("Error loading word vector model: " + e.getMessage());
+            return;
+        }
         
         System.out.println("Welcome to your To-Do List!");
         System.out.println("Before starting, please enter your email address for task notifications:");
@@ -27,14 +40,15 @@ public class ToDoList_Assignment {
                 case 2 -> displayTasks(listOfTasks);
                 case 3 -> findTask(input, listOfTasks);
                 case 4 -> fullTextSearch(input, listOfTasks);
-                case 5 -> deleteTask(input, listOfTasks);
-                case 6 -> markTaskComplete(input, listOfTasks);
-                case 7 -> checkAndSendNotifications(userEmail, listOfTasks);
-                case 8 -> editTask(input, listOfTasks); 
-                case 9 -> sortTask(input, listOfTasks);
-                case 10 -> recurringTask(input, listOfTasks);
-                case 11 -> saveTasks(listOfTasks, FILE_NAME);
-                case 12 -> loadTasks(listOfTasks, FILE_NAME);
+                case 5 -> vectorSearch(input, listOfTasks);
+                case 6 -> deleteTask(input, listOfTasks);
+                case 7 -> markTaskComplete(input, listOfTasks);
+                case 8 -> checkAndSendNotifications(userEmail, listOfTasks);
+                case 9 -> editTask(input, listOfTasks); 
+                case 10 -> sortTask(input, listOfTasks);
+                case 11 -> recurringTask(input, listOfTasks);
+                case 12 -> saveTasks(listOfTasks, FILE_NAME);
+                case 13 -> loadTasks(listOfTasks, FILE_NAME);
                 case 0 -> {
                     System.out.println("Goodbye!");
                     input.close();
@@ -42,6 +56,52 @@ public class ToDoList_Assignment {
                 }
                 default -> System.out.println("Invalid option. Please try again.");
             }
+        }
+    }
+    //Vector Search
+     private static void vectorSearch(Scanner input, ArrayList<Task> listOfTasks) {
+        System.out.print("Enter a keyword or phrase for semantic search: ");
+        input.nextLine();
+        String query = input.nextLine();
+
+        INDArray queryVector = getVector(query);
+        if (queryVector == null) {
+            System.out.println("Unable to generate vector for the query. Please try again.");
+            return;
+        }
+
+        System.out.println("\n=== Semantic Search Results ===");
+        boolean found = false;
+
+        for (Task task : listOfTasks) {
+            if (task.getTitle() == null || task.getDescription() == null) {
+                continue;
+            }
+
+            INDArray taskVector = getVector(task.getTitle() + " " + task.getDescription());
+            if (taskVector != null) {
+                double similarity = Transforms.cosineSim(queryVector, taskVector);
+                if (similarity > 0.5) { // Threshold for similarity
+                    System.out.println(task + " (Similarity: " + similarity + ")");
+                    found = true;
+                }
+            }
+        }
+        if (!found) {
+            System.out.println("No tasks found with semantic similarity to the query.");
+        }
+    }
+    private static INDArray getVector(String text) {
+        try {
+            if (text == null || text.isEmpty()) {
+                return null;
+            }
+            String[] tokens = text.split(" ");
+            INDArray vector = wordVectors.getWordVectorsMean(tokens);
+            return vector;
+        } catch (Exception e) {
+            System.out.println("Error generating vector: " + e.getMessage());
+            return null;
         }
     }
     
@@ -54,14 +114,15 @@ public class ToDoList_Assignment {
             (2) Output all tasks
             (3) Find a task by ID
             (4) Search tasks by keyword
-            (5) Delete task
-            (6) Mark Task as Complete
-            (7) Send Notifications for Tasks Due in 24 Hours
-            (8) Edit a task
-            (9) Sort tasks
-            (10) Add a recurring task
-            (11) Create a save file
-            (12) Load the save file
+            (5) Search tasks by semantic similarity              
+            (6) Delete task              
+            (7) Mark Task as Complete
+            (8) Send Notifications for Tasks Due in 24 Hours
+            (9) Edit a task
+            (10) Sort tasks
+            (11) Add a recurring task
+            (12) Create a save file
+            (13) Load the save file
             (0) Exit
             ==========================""");
             return input.nextInt();

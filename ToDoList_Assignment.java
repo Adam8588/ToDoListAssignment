@@ -2,15 +2,27 @@ package com.mycompany.todolist_assignment;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.io.*;
 import java.text.*;
+import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
+import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.ops.transforms.Transforms;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ToDoList_Assignment {
+    private static final Logger logger = LoggerFactory.getLogger(ToDoList_Assignment.class);
     
     private static final String FILE_NAME = "task.dat";
+    private static WordVectors wordVectors;
 
     public static void main(String[] args) {
+        logger.info("SLF4J is configured and working!");
+        
         Scanner input = new Scanner (System.in);
+        initializeWordVectors();
         
         ArrayList<Task> listOfTasks = new ArrayList<>(); //Creates a new ArrayList to store the tasks
         
@@ -35,6 +47,7 @@ public class ToDoList_Assignment {
                 case 10 -> recurringTask(input, listOfTasks);
                 case 11 -> saveTasks(listOfTasks, FILE_NAME);
                 case 12 -> loadTasks(listOfTasks, FILE_NAME);
+                case 13 -> vectorSearch(input, listOfTasks);
                 case 0 -> {
                     System.out.println("Goodbye!");
                     input.close();
@@ -56,15 +69,22 @@ public class ToDoList_Assignment {
             (4) Search tasks by keyword
             (5) Delete task
             (6) Mark Task as Complete
-            (7) Send Notifications for Tasks Due in 24 Hours
+            (7) Send Notificaations for Tasks Due in 24 Hours
             (8) Edit a task
             (9) Sort tasks
             (10) Add a recurring task
             (11) Create a save file
             (12) Load the save file
+            (13) Semantic Search
             (0) Exit
             ==========================""");
+
+        try {
             return input.nextInt();
+        } catch (InputMismatchException e) {
+            input.nextLine(); // Clear the invalid input
+            return -1; // Return invalid choice
+        }
     }
     
     //TASK ADDER
@@ -459,5 +479,144 @@ public class ToDoList_Assignment {
             } catch (IOException | ClassNotFoundException e) {
                 System.out.println("Error loading tasks: " + e.getMessage());
         }
-     }
+    }
+        
+    private static void initializeWordVectors() {
+        try {
+            String modelPath = "GoogleNews-vectors-negative300-SLIM.bin";
+            logger.info("Loading word vector model from: " + modelPath);
+
+            File modelFile = new File(modelPath);
+            if (!modelFile.exists()) {
+                logger.error("Word vector model file not found at: " + modelPath);
+                return;
+            }
+
+            wordVectors = WordVectorSerializer.readWord2VecModel(modelFile);
+            logger.info("Word vector model loaded successfully.");
+
+        } catch (Exception e) {
+            logger.error("Error loading word vector model: " + e.getMessage(), e);
+            wordVectors = null;
+        }
+    }
+    
+    //Vector Search
+    private static void vectorSearch(Scanner input, ArrayList<Task> listOfTasks) {
+        if (wordVectors == null) {
+            System.out.println("Word vector model is not initialized. Vector search is unavailable.");
+            return;
+        }
+
+        System.out.println("=== Search Tasks ===");
+        System.out.print("Enter a keyword or phrase to search tasks: ");
+        input.nextLine();
+        String query = input.nextLine().toLowerCase().trim();
+
+        if (query.isEmpty()) {
+            System.out.println("Please enter a valid search query.");
+            return;
+        }
+
+        // Create a map to store task-similarity pairs
+        Map<Task, Double> taskSimilarities = new HashMap<>();
+
+        // Calculate similarity for each task
+        for (Task task : listOfTasks) {
+            double similarity = calculateTaskSimilarity(query, task);
+            if (similarity > 0.3) { // Lower threshold for more results
+                taskSimilarities.put(task, similarity);
+            }
+        }
+
+        // Sort tasks by similarity score
+        List<Map.Entry<Task, Double>> sortedTasks = new ArrayList<>(taskSimilarities.entrySet());
+        sortedTasks.sort(Map.Entry.<Task, Double>comparingByValue().reversed());
+
+        // Display results
+        if (sortedTasks.isEmpty()) {
+            System.out.println("No semantically similar tasks found.");
+            return;
+        }
+
+        for (Map.Entry<Task, Double> entry : sortedTasks) {
+            System.out.println("Task: " + entry.getKey().getTitle());
+        }
+    }
+    
+    
+    
+    private static double calculateTaskSimilarity(String query, Task task) {
+        if (task.getTitle() == null || task.getDescription() == null) {
+            return 0.0;
+        }
+
+        try {
+            // Combine title and description with different weights
+            String taskText = (task.getTitle() + " " + task.getTitle() + " " + task.getDescription()).toLowerCase();
+
+            // Split into words and filter stop words
+            Set<String> stopWords = new HashSet<>(Arrays.asList(
+                "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with", "by"
+            ));
+
+            String[] queryTokens = Arrays.stream(query.split("\\s+"))
+                .filter(word -> !stopWords.contains(word))
+                .toArray(String[]::new);
+
+            String[] taskTokens = Arrays.stream(taskText.split("\\s+"))
+                .filter(word -> !stopWords.contains(word))
+                .toArray(String[]::new);
+
+            double maxSimilarity = 0.0;
+
+            // Calculate similarity between each query word and task words
+            for (String queryWord : queryTokens) {
+                if (!wordVectors.hasWord(queryWord)) continue;
+
+                double[] queryVectorArray = wordVectors.getWordVector(queryWord);
+
+                for (String taskWord : taskTokens) {
+                    if (!wordVectors.hasWord(taskWord)) continue;
+
+                    double[] taskVectorArray = wordVectors.getWordVector(taskWord);
+
+                    // Calculate cosine similarity manually
+                    double similarity = cosineSimilarity(queryVectorArray, taskVectorArray);
+                    maxSimilarity = Math.max(maxSimilarity, similarity);
+                }
+            }
+
+            return maxSimilarity;
+
+        } catch (Exception e) {
+            return 0.0;
+        }
+    }
+    
+    // Helper method to calculate cosine similarity between two vectors
+    private static double cosineSimilarity(double[] vectorA, double[] vectorB) {
+        if (vectorA.length != vectorB.length) {
+            return 0.0;
+        }
+
+        double dotProduct = 0.0;
+        double normA = 0.0;
+        double normB = 0.0;
+
+        for (int i = 0; i < vectorA.length; i++) {
+            dotProduct += vectorA[i] * vectorB[i];
+            normA += vectorA[i] * vectorA[i];
+            normB += vectorB[i] * vectorB[i];
+        }
+
+        normA = Math.sqrt(normA);
+        normB = Math.sqrt(normB);
+
+        if (normA == 0.0 || normB == 0.0) {
+            return 0.0;
+        }
+
+        return dotProduct / (normA * normB);
+    }
 }

@@ -2,13 +2,10 @@ package com.mycompany.todolist_assignment;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.io.*;
 import java.text.*;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.ops.transforms.Transforms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -381,6 +381,7 @@ public class ToDoList_Assignment {
     private static void sortTask(Scanner input, ArrayList<Task> listOfTasks) {
         System.out.println("Sort by:\n1. Due Date (Ascending)\n2. Due Date (Descending)\n3. Priority (High to Low)\n4. Priority (Low to High)");
         int sortChoice = input.nextInt();
+        input.nextLine();
         switch (sortChoice) {
             case 1 -> listOfTasks.sort(Comparator.comparing(Task::getDueDate));
             case 2 -> listOfTasks.sort(Comparator.comparing(Task::getDueDate).reversed());

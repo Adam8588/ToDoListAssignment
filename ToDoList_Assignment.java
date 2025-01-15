@@ -393,11 +393,18 @@ public class ToDoList_Assignment {
 
     //RECURRING TASKS
     private static void recurringTask(Scanner input, ArrayList<Task> listOfTasks) {
-        Task task = taskAdder(input, listOfTasks);
-        System.out.print("Enter recurrence interval (daily, weekly, monthly): ");
-        String interval = input.nextLine();
-        task.setRecurrenceInterval(interval);
-        System.out.println("Recurring task \"" + task.getTitle() + "\" created successfully!");
+        System.out.print("Enter the task ID for which you want to set the recurrence interval: ");
+        int taskId = input.nextInt();
+        input.nextLine();
+        Task task = findTaskById(listOfTasks, taskId);
+        if (task != null) {
+            System.out.print("Enter recurrence interval (daily, weekly, monthly): ");
+            String interval = input.nextLine();
+            task.setRecurrenceInterval(interval);
+            System.out.println("Recurring task \"" + task.getTitle() + "\" created successfully!");
+        } else {
+            System.out.println("Task with ID " + taskId + " not found.");
+        }
     }
 
     //SEND EMAIL NOTIFICATION
